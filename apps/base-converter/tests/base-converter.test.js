@@ -7,13 +7,15 @@ test("4・8・12ビットの表記をゼロ埋めする", () => {
   assert.equal(formatBinary(10, 8), "00001010");
   assert.equal(formatHex(10, 8), "0A");
   assert.equal(formatHex(4095, 12), "FFF");
+  assert.throws(() => formatBinary(16, 4), /不正/);
+  assert.throws(() => formatHex(16, 4), /不正/);
 });
 
 test("0は各ビット幅で出題・表記できる", () => {
   const zeroQuestion = createQuestion(() => 0);
   assert.equal(zeroQuestion.value, 0);
   assert.equal(zeroQuestion.answer, valueForBase(0, zeroQuestion.toBase, zeroQuestion.width));
-  assert.ok(zeroQuestion.explanation.includes("0"));
+  assert.equal(explanationFor({ value: 0, width: 4, fromBase: 2, toBase: 10 }), "0000₂ は全ての桁が0なので 0₁₀");
 });
 
 test("入力を基数ごとに正規化・検証する", () => {

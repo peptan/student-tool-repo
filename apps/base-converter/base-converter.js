@@ -3,14 +3,14 @@ export const HEX_DIGITS = "0123456789ABCDEF";
 const allowedWidths = [4, 8, 12];
 
 export function formatBinary(value, width) {
-  if (!Number.isInteger(value) || value < 0 || !allowedWidths.includes(width)) {
+  if (!Number.isInteger(value) || value < 0 || !allowedWidths.includes(width) || value >= 2 ** width) {
     throw new Error("value または width が不正です。");
   }
   return value.toString(2).padStart(width, "0");
 }
 
 export function formatHex(value, width) {
-  if (!Number.isInteger(value) || value < 0 || !allowedWidths.includes(width)) {
+  if (!Number.isInteger(value) || value < 0 || !allowedWidths.includes(width) || value >= 2 ** width) {
     throw new Error("value または width が不正です。");
   }
   return value.toString(16).toUpperCase().padStart(width / 4, "0");
@@ -34,6 +34,7 @@ function binaryToDecimalSteps(binary) {
   const terms = [...binary]
     .map((digit, index) => (digit === "1" ? `2^${binary.length - 1 - index}` : null))
     .filter(Boolean);
+  if (terms.length === 0) return `${binary}₂ は全ての桁が0なので 0₁₀`;
   return `${binary}₂ = ${terms.join(" + ")} = ${parseInt(binary, 2)}₁₀`;
 }
 

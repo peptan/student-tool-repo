@@ -5,7 +5,6 @@ const form = document.querySelector("#quiz-form");
 const result = document.querySelector("#result");
 const message = document.querySelector("#form-message");
 const newQuizButton = document.querySelector("#new-quiz");
-const gradeQuizButton = document.querySelector("#grade-quiz");
 let questions = [];
 
 function baseLabel(base) {
@@ -73,7 +72,7 @@ function gradeQuiz() {
   });
   const invalid = grades.find((grade) => grade.submitted.length > 0 && !isValidAnswer(grade.submitted, grade.question.toBase));
   if (invalid) {
-    message.textContent = "入力形式を確認してください。2進数は0と1、16進数は0〜9とA〜Fだけを使います。";
+    message.textContent = "入力形式を確認してください。2進数は0と1、10進数は0〜9、16進数は0〜9とA〜Fだけを使います。";
     return;
   }
   message.textContent = "";
@@ -84,6 +83,5 @@ form.addEventListener("submit", (event) => {
   event.preventDefault();
   gradeQuiz();
 });
-gradeQuizButton.addEventListener("click", gradeQuiz);
 newQuizButton.addEventListener("click", startQuiz);
 startQuiz();
