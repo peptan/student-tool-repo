@@ -1,0 +1,10 @@
+{
+  "name": "student-tool-repo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test apps/base-converter/tests/*.test.js",
+    "check": "node --check apps/base-converter/base-converter.js && node --check apps/base-converter/app.js"
+  }
+}
