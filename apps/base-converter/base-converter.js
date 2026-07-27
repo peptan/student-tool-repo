@@ -99,7 +99,7 @@ export function valueForBase(value, base, width) {
 
 export function createQuestion(random = Math.random) {
   const width = allowedWidths[Math.floor(random() * allowedWidths.length)];
-  const value = 1 + Math.floor(random() * (2 ** width - 1));
+  const value = Math.floor(random() * (2 ** width));
   const pairs = [[2, 10], [10, 2], [2, 16], [16, 2], [10, 16], [16, 10]];
   const [fromBase, toBase] = pairs[Math.floor(random() * pairs.length)];
   return {

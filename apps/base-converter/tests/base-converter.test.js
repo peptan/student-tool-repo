@@ -1,12 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createQuiz, explanationFor, formatBinary, formatHex, gradeQuestion, isValidAnswer, normalizeAnswer, valueForBase } from "../base-converter.js";
+import { createQuestion, createQuiz, explanationFor, formatBinary, formatHex, gradeQuestion, isValidAnswer, normalizeAnswer, valueForBase } from "../base-converter.js";
 
 test("4・8・12ビットの表記をゼロ埋めする", () => {
   assert.equal(formatBinary(10, 4), "1010");
   assert.equal(formatBinary(10, 8), "00001010");
   assert.equal(formatHex(10, 8), "0A");
   assert.equal(formatHex(4095, 12), "FFF");
+});
+
+test("0は各ビット幅で出題・表記できる", () => {
+  const zeroQuestion = createQuestion(() => 0);
+  assert.equal(zeroQuestion.value, 0);
+  assert.equal(zeroQuestion.answer, valueForBase(0, zeroQuestion.toBase, zeroQuestion.width));
+  assert.ok(zeroQuestion.explanation.includes("0"));
 });
 
 test("入力を基数ごとに正規化・検証する", () => {
