@@ -43,14 +43,14 @@ test("通算初回成績は新しい10問で積み上がり、復習では変わ
   assert.equal(analyticsSummary(progress).solved, 3);
 });
 
-test("発展問題は通算正解を重複なく数え、難易度別の初回成績を持つ", () => {
+test("通算正解は、初回に出題された重複なしの問題を分母にする", () => {
   const advanced = question(321, 10, 16, 12);
   let progress = beginPracticeSet(emptyProgress(), [advanced]);
   progress = recordGrades(progress, [{ question: advanced, correct: true }], "practice");
   progress = recordGrades(progress, [{ question: advanced, correct: true }], "review");
   const summary = analyticsSummary(progress);
-  assert.deepEqual(summary.difficulty[12], { initialAttempted: 1, initialCorrect: 1, solved: 1 });
   assert.equal(summary.solved, 1);
+  assert.equal(summary.attempted, 1);
 });
 
 test("正解済み問題は誤答復習リストから外れる", () => {
@@ -79,7 +79,7 @@ test("旧形式の保存値は推測で新しい初回成績へ混ぜない", ()
   const storage = memoryStorage();
   storage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, stats: { "2-to-10": { attempted: 19, correct: 2 } }, mistakes: [question(5)] }));
   const migrated = loadProgress(storage);
-  assert.equal(migrated.version, 3);
+  assert.equal(migrated.version, 4);
   assert.equal(migrated.legacyNotice, true);
   assert.equal(migrated.mistakes.length, 1);
   assert.equal(initialSummary(migrated, "2-to-10").rate, null);

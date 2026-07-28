@@ -58,7 +58,7 @@ test("選んだ変換だけを10問、重複なしで生成する", () => {
   let state = 0;
   const random = () => { state = (state + 0.137) % 1; return state; };
   const quiz = createQuiz(10, tenToSixteen, random);
-  assert.equal(quiz.length, 10);
+  assert.deepEqual(quiz.map((question) => question.width), [4, 4, 4, 4, 8, 8, 8, 8, 12, 12]);
   assert.equal(new Set(quiz.map((q) => `${q.value}-${q.width}`)).size, 10);
   quiz.forEach((question) => {
     assert.equal(question.fromBase, 10);

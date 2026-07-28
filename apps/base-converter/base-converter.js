@@ -139,9 +139,9 @@ export function choicesForQuestion(question, random = Math.random) {
   return shuffle(values.map((value) => valueForBase(value, question.toBase, question.width)), random);
 }
 
-export function createQuestion(conversion, random = Math.random) {
+export function createQuestion(conversion, random = Math.random, requestedWidth) {
   validateConversion(conversion);
-  const width = allowedWidths[Math.floor(random() * allowedWidths.length)];
+  const width = requestedWidth ?? allowedWidths[Math.floor(random() * allowedWidths.length)];
   const value = Math.floor(random() * (2 ** width));
   const question = {
     id: crypto.randomUUID(),
@@ -158,15 +158,16 @@ export function createQuestion(conversion, random = Math.random) {
 
 export function createQuiz(count = 10, conversion = CONVERSION_CHOICES[0], random = Math.random) {
   validateConversion(conversion);
+  const widths = count === 10 ? [4, 4, 4, 4, 8, 8, 8, 8, 12, 12] : Array.from({ length: count }, () => allowedWidths[Math.floor(random() * allowedWidths.length)]);
   const questions = [];
   const used = new Set();
-  while (questions.length < count) {
-    const question = createQuestion(conversion, random);
-    const key = `${question.value}-${question.width}`;
-    if (!used.has(key)) {
-      used.add(key);
-      questions.push(question);
-    }
+  for (const width of widths) {
+    let question;
+    do {
+      question = createQuestion(conversion, random, width);
+    } while (used.has(`${question.value}-${question.width}`));
+    used.add(`${question.value}-${question.width}`);
+    questions.push(question);
   }
   return questions;
 }

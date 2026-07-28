@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>学習の分析 | student-tool</title>
-  <meta name="description" content="進数変換の通算初回成績と難易度別の達成状況。">
+  <meta name="description" content="進数変換の通算初回成績と変換別の苦手分析。">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
     <section class="analytics-hero" aria-labelledby="analytics-title">
       <p class="eyebrow">このブラウザの学習記録</p>
       <h1 id="analytics-title">学習の<span>分析</span></h1>
-      <p>復習の結果を混ぜず、最初に解いた問題だけで苦手な変換と難易度を見ます。</p>
+      <p>復習の結果を混ぜず、最初に解いた問題だけで苦手な変換を見ます。</p>
     </section>
     <section class="achievement-panel" aria-labelledby="achievement-title">
       <h2 id="achievement-title">積み上げた成果</h2>
@@ -24,11 +24,6 @@
       <h2 id="direction-title">変換ごとの初回正解率</h2>
       <p class="panel-note">低い項目ほど、次の10問で重点的に練習する目安です。</p>
       <div id="direction-chart" class="bar-chart" aria-live="polite"></div>
-    </section>
-    <section class="analysis-panel" aria-labelledby="difficulty-title">
-      <h2 id="difficulty-title">難易度ごとの初回正解率</h2>
-      <p class="panel-note">基礎（4ビット）・標準（8ビット）・発展（12ビット）の問題別に確認できます。</p>
-      <div id="difficulty-chart" class="bar-chart" aria-live="polite"></div>
     </section>
   </main>
   <footer>student-tool · 回答データはブラウザ外へ送信しません</footer>

@@ -1,12 +1,7 @@
 export const PROGRESS_KEY = "student-tool.base-converter.progress.v1";
-const DIFFICULTIES = [4, 8, 12];
-
-function emptyDifficulty() {
-  return Object.fromEntries(DIFFICULTIES.map((width) => [width, { initialAttempted: 0, initialCorrect: 0, solved: 0 }]));
-}
 
 export function emptyProgress() {
-  return { version: 3, stats: {}, mistakes: [], sets: {}, history: { directions: {}, difficulty: emptyDifficulty() }, solvedQuestionKeys: [], legacyNotice: false };
+  return { version: 4, stats: {}, mistakes: [], sets: {}, history: { directions: {} }, solvedQuestionKeys: [], attemptedQuestionKeys: [], legacyNotice: false };
 }
 
 export function questionKey(question) {
@@ -17,12 +12,8 @@ export function conversionKey(question) {
   return `${question.fromBase}-to-${question.toBase}`;
 }
 
-function widthFromQuestionKey(key) {
-  return Number(key.split("-")[3]);
-}
-
 function validProgress(value) {
-  return value && value.version === 3 && typeof value.stats === "object" && Array.isArray(value.mistakes) && typeof value.sets === "object" && typeof value.history === "object" && Array.isArray(value.solvedQuestionKeys);
+  return value && value.version === 4 && typeof value.stats === "object" && Array.isArray(value.mistakes) && typeof value.sets === "object" && typeof value.history === "object" && Array.isArray(value.solvedQuestionKeys) && Array.isArray(value.attemptedQuestionKeys);
 }
 
 function migrateV1(value) {
@@ -33,14 +24,17 @@ function migrateV2(value) {
   const next = { ...emptyProgress(), mistakes: value.mistakes, sets: value.sets, legacyNotice: value.legacyNotice };
   for (const [key, set] of Object.entries(value.sets ?? {})) {
     if (set.initial) next.history.directions[key] = { initialAttempted: set.initial.attempted, initialCorrect: set.initial.correct };
-    for (const solvedKey of set.masteredKeys ?? []) {
-      if (!next.solvedQuestionKeys.includes(solvedKey)) {
-        next.solvedQuestionKeys.push(solvedKey);
-        const width = widthFromQuestionKey(solvedKey);
-        if (next.history.difficulty[width]) next.history.difficulty[width].solved += 1;
-      }
-    }
+    next.attemptedQuestionKeys.push(...(set.questionKeys ?? []));
+    next.solvedQuestionKeys.push(...(set.masteredKeys ?? []));
   }
+  next.attemptedQuestionKeys = [...new Set(next.attemptedQuestionKeys)];
+  next.solvedQuestionKeys = [...new Set(next.solvedQuestionKeys)];
+  return next;
+}
+
+function migrateV3(value) {
+  const next = { ...emptyProgress(), stats: value.stats, mistakes: value.mistakes, sets: value.sets, history: { directions: value.history?.directions ?? {} }, solvedQuestionKeys: value.solvedQuestionKeys ?? [], legacyNotice: value.legacyNotice };
+  next.attemptedQuestionKeys = [...new Set(Object.values(next.sets).flatMap((set) => set.questionKeys ?? []))];
   return next;
 }
 
@@ -48,6 +42,7 @@ export function loadProgress(storage = globalThis.localStorage) {
   try {
     const value = JSON.parse(storage.getItem(PROGRESS_KEY));
     if (validProgress(value)) return value;
+    if (value?.version === 3) return migrateV3(value);
     if (value?.version === 2 && Array.isArray(value.mistakes)) return migrateV2(value);
     if (value?.version === 1 && Array.isArray(value.mistakes)) return migrateV1(value);
     return emptyProgress();
@@ -85,40 +80,31 @@ export function beginPracticeSet(progress, questions) {
 export function recordGrades(progress, grades, mode = "practice") {
   const next = structuredClone(progress);
   const grouped = new Map();
-
   for (const grade of grades) {
     const key = conversionKey(grade.question);
     const collection = grouped.get(key) ?? [];
     collection.push(grade);
     grouped.set(key, collection);
-
     const stats = next.stats[key] ?? { attempted: 0, correct: 0 };
     stats.attempted += 1;
     if (grade.correct) stats.correct += 1;
     next.stats[key] = stats;
 
+    const keyForQuestion = questionKey(grade.question);
     if (mode === "practice") {
       const history = directionHistory(next, key);
       history.initialAttempted += 1;
       if (grade.correct) history.initialCorrect += 1;
       next.history.directions[key] = history;
-      const difficulty = next.history.difficulty[grade.question.width];
-      difficulty.initialAttempted += 1;
-      if (grade.correct) difficulty.initialCorrect += 1;
+      next.attemptedQuestionKeys = unique([...next.attemptedQuestionKeys, keyForQuestion]);
     }
-
-    const keyForQuestion = questionKey(grade.question);
     next.mistakes = next.mistakes.filter((question) => questionKey(question) !== keyForQuestion);
     if (!grade.correct) next.mistakes.push(savedQuestion(grade.question));
 
     const set = next.sets[key];
     if (set && grade.correct && set.questionKeys.includes(keyForQuestion)) set.masteredKeys = unique([...set.masteredKeys, keyForQuestion]);
-    if (grade.correct && !next.solvedQuestionKeys.includes(keyForQuestion)) {
-      next.solvedQuestionKeys.push(keyForQuestion);
-      next.history.difficulty[grade.question.width].solved += 1;
-    }
+    if (grade.correct) next.solvedQuestionKeys = unique([...next.solvedQuestionKeys, keyForQuestion]);
   }
-
   for (const [key, group] of grouped) {
     const result = { attempted: group.length, correct: group.filter((grade) => grade.correct).length };
     const set = next.sets[key];
@@ -147,7 +133,7 @@ export function analyticsSummary(progress) {
   const directions = Object.values(progress.history.directions);
   const initialAttempted = directions.reduce((total, stat) => total + stat.initialAttempted, 0);
   const initialCorrect = directions.reduce((total, stat) => total + stat.initialCorrect, 0);
-  return { initialAttempted, initialCorrect, initialRate: initialAttempted ? Math.round((initialCorrect / initialAttempted) * 100) : null, solved: progress.solvedQuestionKeys.length, difficulty: progress.history.difficulty };
+  return { initialAttempted, initialCorrect, initialRate: initialAttempted ? Math.round((initialCorrect / initialAttempted) * 100) : null, solved: progress.solvedQuestionKeys.length, attempted: progress.attemptedQuestionKeys.length };
 }
 
 export function overallSummary(progress) {
