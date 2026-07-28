@@ -25,25 +25,19 @@ function renderQuiz() {
   result.replaceChildren();
   message.textContent = "";
   const isReview = mode === "review";
-  quizKind.textContent = isReview ? "間違いを復習" : "選択中の出題";
   quizTitle.textContent = isReview ? "間違えた問題を復習" : selectedConversion.label;
-  quizDescription.textContent = isReview
-    ? `${questions.length}問の誤答を出しています。正解すると、このブラウザの復習リストから外れます。`
-    : `${selectedConversion.label} だけを${questions.length}問出題します。4・8・12ビットの表現を含みます。`;
+  quizKind.hidden = !isReview;
+  quizDescription.hidden = !isReview;
+  quizDescription.textContent = isReview ? `${questions.length}問の誤答を出しています。正解すると、このブラウザの復習リストから外れます。` : "";
   newQuizButton.hidden = isReview;
   newQuizButton.style.display = isReview ? "none" : "";
   questionsElement.replaceChildren(...questions.map((question, index) => {
     const article = document.createElement("article");
-    article.className = "question exam-question";
+    article.className = "question";
     article.innerHTML = `
-      <p class="exam-title"><span aria-hidden="true"></span>基本情報技術者試験　数値表現</p>
-      <div class="exam-rule"></div>
       <h2>問 ${index + 1}</h2>
       <p class="prompt">${escapeHtml(question.prompt)}</p>
-      <p class="question-note">${escapeHtml(question.note)}</p>
-      <label for="answer-${question.id}">${question.toBase}進数で入力</label>
-      <input id="answer-${question.id}" name="answer-${question.id}" autocomplete="off" inputmode="text" aria-describedby="hint-${question.id}" placeholder="答えを入力">
-      <p id="hint-${question.id}" class="input-hint">${question.toBase === 16 ? "例: AF または 0xAF" : question.toBase === 2 ? "例: 10101100" : "例: 172"}</p>
+      <input id="answer-${question.id}" name="answer-${question.id}" autocomplete="off" inputmode="text" aria-label="問 ${index + 1} の ${question.toBase}進数の答え" placeholder="答えを入力">
     `;
     return article;
   }));
