@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>進数変換 10問チャレンジ | student-tool</title>
-  <meta name="description" content="基本情報技術者試験の数値表現を練習する、2進数・10進数・16進数のランダム問題。">
+  <meta name="description" content="基本情報技術者試験の数値表現を練習する、2進数・10進数・16進数の10問問題。">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,30 +16,26 @@
     <section class="hero" aria-labelledby="page-title">
       <p class="eyebrow">基礎理論 / 数値表現</p>
       <h1 id="page-title">進数変換<br><span>10問チャレンジ</span></h1>
-      <p>2進数・10進数・16進数を、基本情報技術者試験でよく使う考え方で練習します。</p>
-      <ul class="rules" aria-label="このツールについて">
-        <li>毎回ランダムな10問</li>
-        <li>採点後に全問の解説</li>
-        <li>入力・履歴は保存しません</li>
-      </ul>
+      <p>変換の方向を選び、同じ種類の問題を10問まとめて練習します。</p>
     </section>
 
-    <section class="guide" aria-labelledby="guide-title">
-      <h2 id="guide-title">出題範囲</h2>
-      <p>0〜4,095の整数。4・8・12ビットの2進数、10進数、16進数の相互変換です。負数・補数・小数はこの版では扱いません。</p>
-      <details>
-        <summary>入力のコツ</summary>
-        <p>2進数は <code>1010</code>、16進数は <code>AF</code> のように入力します。16進数の <code>0x</code> は付けても付けなくても大丈夫です。大文字・小文字は区別しません。</p>
-      </details>
+    <section class="settings" aria-labelledby="settings-title">
+      <div>
+        <p class="eyebrow">出題メニュー</p>
+        <h2 id="settings-title">変換を選ぶ</h2>
+      </div>
+      <label for="conversion-menu">10問すべてに出す変換</label>
+      <select id="conversion-menu" name="conversion-menu"></select>
+      <p>選んだ変換だけを、4・8・12ビットの範囲で10問出題します。</p>
     </section>
 
     <section class="quiz-section" aria-labelledby="quiz-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">ランダム問題</p>
-          <h2 id="quiz-title">10問に挑戦</h2>
+          <p class="eyebrow">選択中の出題</p>
+          <h2 id="quiz-title">2進数 → 10進数</h2>
         </div>
-        <button id="new-quiz" class="button secondary" type="button">もう一度10問</button>
+        <button id="new-quiz" class="button secondary" type="button">この変換で10問出す</button>
       </div>
       <form id="quiz-form" novalidate>
         <div id="questions" class="questions" aria-live="polite"></div>

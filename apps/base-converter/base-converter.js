@@ -1,18 +1,28 @@
 export const HEX_DIGITS = "0123456789ABCDEF";
+export const CONVERSION_CHOICES = [
+  { id: "2-to-10", label: "2進数 → 10進数", fromBase: 2, toBase: 10 },
+  { id: "10-to-2", label: "10進数 → 2進数", fromBase: 10, toBase: 2 },
+  { id: "2-to-16", label: "2進数 → 16進数", fromBase: 2, toBase: 16 },
+  { id: "16-to-2", label: "16進数 → 2進数", fromBase: 16, toBase: 2 },
+  { id: "10-to-16", label: "10進数 → 16進数", fromBase: 10, toBase: 16 },
+  { id: "16-to-10", label: "16進数 → 10進数", fromBase: 16, toBase: 10 }
+];
 
 const allowedWidths = [4, 8, 12];
 
-export function formatBinary(value, width) {
+function assertRepresentable(value, width) {
   if (!Number.isInteger(value) || value < 0 || !allowedWidths.includes(width) || value >= 2 ** width) {
     throw new Error("value または width が不正です。");
   }
+}
+
+export function formatBinary(value, width) {
+  assertRepresentable(value, width);
   return value.toString(2).padStart(width, "0");
 }
 
 export function formatHex(value, width) {
-  if (!Number.isInteger(value) || value < 0 || !allowedWidths.includes(width) || value >= 2 ** width) {
-    throw new Error("value または width が不正です。");
-  }
+  assertRepresentable(value, width);
   return value.toString(16).toUpperCase().padStart(width / 4, "0");
 }
 
@@ -34,8 +44,8 @@ function binaryToDecimalSteps(binary) {
   const terms = [...binary]
     .map((digit, index) => (digit === "1" ? `2^${binary.length - 1 - index}` : null))
     .filter(Boolean);
-  if (terms.length === 0) return `${binary}₂ は全ての桁が0なので 0₁₀`;
-  return `${binary}₂ = ${terms.join(" + ")} = ${parseInt(binary, 2)}₁₀`;
+  if (terms.length === 0) return `${binary}（2進数）は全ての桁が0なので、0（10進数）`;
+  return `${binary}（2進数） = ${terms.join(" + ")} = ${parseInt(binary, 2)}（10進数）`;
 }
 
 function decimalToBinarySteps(value, width) {
@@ -46,18 +56,18 @@ function decimalToBinarySteps(value, width) {
     divisions.push(`${remaining} ÷ 2 = ${quotient} 余り ${remaining % 2}`);
     remaining = quotient;
   } while (remaining > 0);
-  return `${divisions.join(" → ")}。余りを下から読むと ${formatBinary(value, width)}₂`;
+  return `${divisions.join(" → ")}。余りを下から読むと ${formatBinary(value, width)}（2進数）`;
 }
 
 function binaryToHexSteps(binary) {
   const groups = binary.match(/.{4}/g);
   const digits = groups.map((group) => parseInt(group, 2).toString(16).toUpperCase());
-  return `${binary}₂ を右から4ビットずつ区切る: ${groups.join(" ")} → ${digits.join(" ")}。したがって ${digits.join("")}₁₆`;
+  return `${binary}（2進数）を右から4ビットずつ区切る: ${groups.join(" ")} → ${digits.join(" ")}。したがって ${digits.join("")}（16進数）`;
 }
 
 function hexToBinarySteps(hex, width) {
   const groups = [...hex].map((digit) => parseInt(digit, 16).toString(2).padStart(4, "0"));
-  return `${hex}₁₆ の各桁を4ビットへ置換: ${[...hex].join(" ")} → ${groups.join(" ")}。したがって ${groups.join("").padStart(width, "0")}₂`;
+  return `${hex}（16進数）の各桁を4ビットへ置換: ${[...hex].join(" ")} → ${groups.join(" ")}。したがって ${groups.join("").padStart(width, "0")}（2進数）`;
 }
 
 function decimalToHexSteps(value, width) {
@@ -70,12 +80,12 @@ function decimalToHexSteps(value, width) {
     divisions.push(`${remaining} ÷ 16 = ${quotient} 余り ${HEX_DIGITS[remainder]}`);
     remaining = quotient;
   } while (remaining > 0);
-  return `${divisions.join(" → ")}。余りを下から読むと ${hex}₁₆`;
+  return `${divisions.join(" → ")}。余りを下から読むと ${hex}（16進数）`;
 }
 
 function hexToDecimalSteps(hex) {
   const terms = [...hex].map((digit, index) => `${parseInt(digit, 16)} × 16^${hex.length - 1 - index}`);
-  return `${hex}₁₆ = ${terms.join(" + ")} = ${parseInt(hex, 16)}₁₀`;
+  return `${hex}（16進数） = ${terms.join(" + ")} = ${parseInt(hex, 16)}（10進数）`;
 }
 
 export function explanationFor(question) {
@@ -93,34 +103,45 @@ export function explanationFor(question) {
 
 export function valueForBase(value, base, width) {
   if (base === 2) return formatBinary(value, width);
-  if (base === 10) return String(value);
+  if (base === 10) {
+    assertRepresentable(value, width);
+    return String(value);
+  }
   if (base === 16) return formatHex(value, width);
   throw new Error("未対応の基数です。");
 }
 
-export function createQuestion(random = Math.random) {
+function validateConversion(conversion) {
+  if (!CONVERSION_CHOICES.some((choice) => choice.fromBase === conversion?.fromBase && choice.toBase === conversion?.toBase)) {
+    throw new Error("未対応の変換です。");
+  }
+}
+
+export function createQuestion(conversion, random = Math.random) {
+  validateConversion(conversion);
   const width = allowedWidths[Math.floor(random() * allowedWidths.length)];
   const value = Math.floor(random() * (2 ** width));
-  const pairs = [[2, 10], [10, 2], [2, 16], [16, 2], [10, 16], [16, 10]];
-  const [fromBase, toBase] = pairs[Math.floor(random() * pairs.length)];
+  const source = valueForBase(value, conversion.fromBase, width);
   return {
     id: crypto.randomUUID(),
     value,
     width,
-    fromBase,
-    toBase,
-    prompt: `${valueForBase(value, fromBase, width)}${fromBase === 16 ? "₁₆" : fromBase === 10 ? "₁₀" : "₂"} を ${toBase}進数に変換しなさい（${width}ビット表現）。`,
-    answer: valueForBase(value, toBase, width),
-    explanation: explanationFor({ value, width, fromBase, toBase })
+    fromBase: conversion.fromBase,
+    toBase: conversion.toBase,
+    prompt: `${conversion.fromBase}進数の ${source} を ${conversion.toBase}進数に変換したものはどれか。`,
+    note: `${width}ビットで表すものとする。`,
+    answer: valueForBase(value, conversion.toBase, width),
+    explanation: explanationFor({ value, width, fromBase: conversion.fromBase, toBase: conversion.toBase })
   };
 }
 
-export function createQuiz(count = 10, random = Math.random) {
+export function createQuiz(count = 10, conversion = CONVERSION_CHOICES[0], random = Math.random) {
+  validateConversion(conversion);
   const questions = [];
   const used = new Set();
   while (questions.length < count) {
-    const question = createQuestion(random);
-    const key = `${question.value}-${question.width}-${question.fromBase}-${question.toBase}`;
+    const question = createQuestion(conversion, random);
+    const key = `${question.value}-${question.width}`;
     if (!used.has(key)) {
       used.add(key);
       questions.push(question);
