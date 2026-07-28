@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { accuracy, emptyProgress, loadProgress, PROGRESS_KEY, recordGrades, reviewQuestions, saveProgress } from "../progress-store.js";
+import { beginPracticeSet, emptyProgress, loadProgress, PROGRESS_KEY, recordGrades, reviewQuestions, saveProgress, setSummary } from "../progress-store.js";
 
 function question(value, fromBase = 2, toBase = 10, width = 4) {
-  return { id: `test-${value}`, value, fromBase, toBase, width, prompt: "問題", note: "4ビット", answer: String(value), explanation: "解説" };
+  return { id: `test-${value}`, value, fromBase, toBase, width, prompt: "問題", answer: String(value), choices: ["0", "1", "2", "3"], explanation: "解説" };
 }
 
 function memoryStorage() {
@@ -11,32 +11,55 @@ function memoryStorage() {
   return { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
 }
 
-test("採点結果を変換別の正解率と誤答復習に反映する", () => {
-  const first = recordGrades(emptyProgress(), [
-    { question: question(3), correct: true },
-    { question: question(5), correct: false }
-  ]);
-  assert.deepEqual(first.stats["2-to-10"], { attempted: 2, correct: 1 });
-  assert.equal(accuracy(first.stats["2-to-10"]), 50);
-  assert.equal(first.mistakes.length, 1);
-  assert.equal(first.mistakes[0].value, 5);
+test("初回と復習を混ぜず、元の10問に対する到達状況を計算する", () => {
+  const questions = Array.from({ length: 10 }, (_, index) => question(index));
+  let progress = beginPracticeSet(emptyProgress(), questions);
+  progress = recordGrades(progress, questions.map((item, index) => ({ question: item, correct: index === 0 })), "practice");
+  let summary = setSummary(progress, "2-to-10");
+  assert.deepEqual(summary.initial, { attempted: 10, correct: 1 });
+  assert.equal(summary.mastered, 1);
+  assert.equal(summary.remaining, 9);
+  assert.equal(summary.masteryRate, 10);
 
-  const second = recordGrades(first, [{ question: question(5), correct: true }]);
-  assert.deepEqual(second.stats["2-to-10"], { attempted: 3, correct: 2 });
-  assert.equal(second.mistakes.length, 0);
+  progress = recordGrades(progress, questions.slice(1).map((item, index) => ({ question: item, correct: index === 0 })), "review");
+  summary = setSummary(progress, "2-to-10");
+  assert.deepEqual(summary.latestReview, { attempted: 9, correct: 1 });
+  assert.equal(summary.mastered, 2);
+  assert.equal(summary.remaining, 8);
+  assert.equal(summary.masteryRate, 20);
+  assert.equal(progress.mistakes.length, 8);
+});
+
+test("正解済み問題は誤答復習リストから外れる", () => {
+  const questions = [question(3), question(5)];
+  let progress = beginPracticeSet(emptyProgress(), questions);
+  progress = recordGrades(progress, [{ question: questions[0], correct: true }, { question: questions[1], correct: false }], "practice");
+  assert.equal(progress.mistakes.length, 1);
+  progress = recordGrades(progress, [{ question: questions[1], correct: true }], "review");
+  assert.equal(progress.mistakes.length, 0);
 });
 
 test("学習記録はブラウザ保存から読込み、復習用問題を再生成する", () => {
   const storage = memoryStorage();
-  const recorded = recordGrades(emptyProgress(), [{ question: question(12, 10, 16, 8), correct: false }]);
+  const original = question(12, 10, 16, 8);
+  const recorded = recordGrades(beginPracticeSet(emptyProgress(), [original]), [{ question: original, correct: false }], "practice");
   saveProgress(recorded, storage);
   assert.equal(JSON.parse(storage.getItem(PROGRESS_KEY)).mistakes.length, 1);
-  const restored = loadProgress(storage);
-  const review = reviewQuestions(restored);
+  const review = reviewQuestions(loadProgress(storage));
   assert.equal(review.length, 1);
   assert.equal(review[0].id.startsWith("test-"), false);
   assert.equal(review[0].fromBase, 10);
   assert.equal(review[0].toBase, 16);
+});
+
+test("旧形式の保存値は誤答だけを引き継ぎ、新しい到達状況へ混ぜない", () => {
+  const storage = memoryStorage();
+  storage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, stats: { "2-to-10": { attempted: 19, correct: 2 } }, mistakes: [question(5)] }));
+  const migrated = loadProgress(storage);
+  assert.equal(migrated.version, 2);
+  assert.equal(migrated.legacyNotice, true);
+  assert.equal(migrated.mistakes.length, 1);
+  assert.equal(setSummary(migrated, "2-to-10"), null);
 });
 
 test("壊れた保存値は空の学習記録として扱う", () => {

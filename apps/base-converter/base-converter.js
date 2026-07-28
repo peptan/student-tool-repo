@@ -41,9 +41,7 @@ export function isValidAnswer(value, base) {
 }
 
 function binaryToDecimalSteps(binary) {
-  const terms = [...binary]
-    .map((digit, index) => (digit === "1" ? `2^${binary.length - 1 - index}` : null))
-    .filter(Boolean);
+  const terms = [...binary].map((digit, index) => (digit === "1" ? `2^${binary.length - 1 - index}` : null)).filter(Boolean);
   if (terms.length === 0) return `${binary}（2進数）は全ての桁が0なので、0（10進数）`;
   return `${binary}（2進数） = ${terms.join(" + ")} = ${parseInt(binary, 2)}（10進数）`;
 }
@@ -117,22 +115,45 @@ function validateConversion(conversion) {
   }
 }
 
+function shuffle(items, random) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
+  }
+  return shuffled;
+}
+
+export function choicesForQuestion(question, random = Math.random) {
+  const max = 2 ** question.width - 1;
+  const values = [question.value];
+  const deltas = [1, -1, 2, -2, 3, -3, 4, -4, 8, -8, 16, -16];
+  for (const delta of deltas) {
+    const candidate = question.value + delta;
+    if (candidate >= 0 && candidate <= max && !values.includes(candidate)) values.push(candidate);
+    if (values.length === 4) break;
+  }
+  for (let candidate = 0; values.length < 4 && candidate <= max; candidate += 1) {
+    if (!values.includes(candidate)) values.push(candidate);
+  }
+  return shuffle(values.map((value) => valueForBase(value, question.toBase, question.width)), random);
+}
+
 export function createQuestion(conversion, random = Math.random) {
   validateConversion(conversion);
   const width = allowedWidths[Math.floor(random() * allowedWidths.length)];
   const value = Math.floor(random() * (2 ** width));
-  const source = valueForBase(value, conversion.fromBase, width);
-  return {
+  const question = {
     id: crypto.randomUUID(),
     value,
     width,
     fromBase: conversion.fromBase,
     toBase: conversion.toBase,
-    prompt: `${conversion.fromBase}進数の ${source} を ${conversion.toBase}進数に変換したものはどれか。`,
-    note: `${width}ビットで表すものとする。`,
+    prompt: `${conversion.fromBase}進数の ${valueForBase(value, conversion.fromBase, width)} を ${conversion.toBase}進数に変換したものはどれか。`,
     answer: valueForBase(value, conversion.toBase, width),
     explanation: explanationFor({ value, width, fromBase: conversion.fromBase, toBase: conversion.toBase })
   };
+  return { ...question, choices: choicesForQuestion(question, random) };
 }
 
 export function createQuiz(count = 10, conversion = CONVERSION_CHOICES[0], random = Math.random) {

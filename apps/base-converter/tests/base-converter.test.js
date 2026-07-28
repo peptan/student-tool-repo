@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CONVERSION_CHOICES, createQuestion, createQuiz, explanationFor, formatBinary, formatHex, gradeQuestion, isValidAnswer, normalizeAnswer, valueForBase } from "../base-converter.js";
+import { CONVERSION_CHOICES, choicesForQuestion, createQuestion, createQuiz, explanationFor, formatBinary, formatHex, gradeQuestion, isValidAnswer, normalizeAnswer, valueForBase } from "../base-converter.js";
 
 const twoToTen = CONVERSION_CHOICES.find((choice) => choice.id === "2-to-10");
 const tenToSixteen = CONVERSION_CHOICES.find((choice) => choice.id === "10-to-16");
@@ -46,6 +46,14 @@ test("各変換方向に下付き文字なしの固定形式解説がある", ()
   }
 });
 
+test("各問題は正解を含む重複なしの4択を生成する", () => {
+  const question = createQuestion(twoToTen, () => 0.4);
+  assert.equal(question.choices.length, 4);
+  assert.equal(new Set(question.choices).size, 4);
+  assert.ok(question.choices.includes(question.answer));
+  assert.deepEqual(choicesForQuestion({ value: 0, width: 4, toBase: 10 }, () => 0).sort(), ["0", "1", "2", "3"]);
+});
+
 test("選んだ変換だけを10問、重複なしで生成する", () => {
   let state = 0;
   const random = () => { state = (state + 0.137) % 1; return state; };
@@ -57,5 +65,6 @@ test("選んだ変換だけを10問、重複なしで生成する", () => {
     assert.equal(question.toBase, 16);
     assert.match(question.prompt, /^10進数の .+ を 16進数に変換したものはどれか。$/);
     assert.equal(question.answer, valueForBase(question.value, question.toBase, question.width));
+    assert.equal(question.choices.length, 4);
   });
 });
