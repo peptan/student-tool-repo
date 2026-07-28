@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="進数変換">
+  <rect width="64" height="64" rx="14" fill="#143d68"/>
+  <rect x="7" y="8" width="23" height="48" rx="7" fill="#e9f5fc"/>
+  <path d="M37 23h13m-5-5 5 5-5 5M50 41H37" fill="none" stroke="#64c4ef" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <g fill="#143d68">
+    <rect x="12" y="15" width="5" height="12" rx="2.5"/>
+    <rect x="21" y="15" width="5" height="12" rx="2.5"/>
+    <rect x="12" y="36" width="5" height="12" rx="2.5"/>
+    <rect x="21" y="36" width="5" height="12" rx="2.5"/>
+  </g>
+  <path d="M14.5 21h9M14.5 42h9" stroke="#e9f5fc" stroke-linecap="round" stroke-width="2"/>
+</svg>
