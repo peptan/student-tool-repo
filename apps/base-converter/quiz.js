@@ -64,7 +64,7 @@ function renderResults(grades, progress) {
     const details = document.createElement("details");
     details.className = grade.correct ? "answer correct" : "answer incorrect";
     details.open = true;
-    details.innerHTML = `<summary><span>問 ${index + 1}</span><strong>${grade.correct ? "正解" : "不正解"}</strong></summary><p class="answer-prompt">${escapeHtml(grade.question.prompt)}</p><dl><div><dt>選んだ答え</dt><dd>${escapeHtml(grade.submitted || "（未選択）")}</dd></div><div><dt>正答</dt><dd>${escapeHtml(grade.question.answer)}</dd></div></dl><p class="explanation"><b>解き方:</b> ${escapeHtml(grade.question.explanation)}</p>`;
+    details.innerHTML = `<summary><span>問 ${index + 1}</span><strong>${grade.correct ? "正解" : "不正解"}</strong></summary><p class="answer-prompt">${escapeHtml(grade.question.prompt)}</p><dl class="answer-values"><div><dt>選んだ答え</dt><dd>${escapeHtml(grade.submitted || "（未選択）")}</dd></div><div><dt>正答</dt><dd>${escapeHtml(grade.question.answer)}</dd></div></dl><p class="explanation"><b>解き方:</b> ${escapeHtml(grade.question.explanation)}</p>`;
     list.append(details);
   });
   const back = document.createElement("a");

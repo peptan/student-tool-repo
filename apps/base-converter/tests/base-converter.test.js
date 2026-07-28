@@ -63,7 +63,7 @@ test("選んだ変換だけを10問、重複なしで生成する", () => {
   quiz.forEach((question) => {
     assert.equal(question.fromBase, 10);
     assert.equal(question.toBase, 16);
-    assert.match(question.prompt, /^10進数の .+ を 16進数に変換したものはどれか。$/);
+    assert.match(question.prompt, /^10進数の .+ を 16進数に変換したものとして、次のうち正しいものはどれか。$/);
     assert.equal(question.answer, valueForBase(question.value, question.toBase, question.width));
     assert.equal(question.choices.length, 4);
   });

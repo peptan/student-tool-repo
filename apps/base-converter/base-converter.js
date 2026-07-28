@@ -149,7 +149,7 @@ export function createQuestion(conversion, random = Math.random) {
     width,
     fromBase: conversion.fromBase,
     toBase: conversion.toBase,
-    prompt: `${conversion.fromBase}進数の ${valueForBase(value, conversion.fromBase, width)} を ${conversion.toBase}進数に変換したものはどれか。`,
+    prompt: `${conversion.fromBase}進数の ${valueForBase(value, conversion.fromBase, width)} を ${conversion.toBase}進数に変換したものとして、次のうち正しいものはどれか。`,
     answer: valueForBase(value, conversion.toBase, width),
     explanation: explanationFor({ value, width, fromBase: conversion.fromBase, toBase: conversion.toBase })
   };
