@@ -43,14 +43,14 @@ test("通算初回成績は新しい10問で積み上がり、復習では変わ
   assert.equal(analyticsSummary(progress).solved, 3);
 });
 
-test("通算正解は、初回に出題された重複なしの問題を分母にする", () => {
-  const advanced = question(321, 10, 16, 12);
-  let progress = beginPracticeSet(emptyProgress(), [advanced]);
-  progress = recordGrades(progress, [{ question: advanced, correct: true }], "practice");
-  progress = recordGrades(progress, [{ question: advanced, correct: true }], "review");
+test("通算正解は、これまで最初に解いた全問題を分母にする", () => {
+  const questions = Array.from({ length: 40 }, (_, index) => question(index, 2, 10, 12));
+  let progress = beginPracticeSet(emptyProgress(), questions);
+  progress = recordGrades(progress, questions.map((item, index) => ({ question: item, correct: index < 7 })), "practice");
+  progress = recordGrades(progress, [{ question: questions[7], correct: true }], "review");
   const summary = analyticsSummary(progress);
-  assert.equal(summary.solved, 1);
-  assert.equal(summary.attempted, 1);
+  assert.equal(summary.initialCorrect, 7);
+  assert.equal(summary.initialAttempted, 40);
 });
 
 test("正解済み問題は誤答復習リストから外れる", () => {

@@ -20,7 +20,7 @@ function render() {
   const progress = loadProgress();
   const summary = analyticsSummary(progress);
   achievementCards.replaceChildren(...[
-    ["通算で正解した問題", `${summary.solved} / ${summary.attempted}問`, "最初に出題された重複なしの問題を分母にしています"],
+    ["通算で正解した問題", `${summary.initialCorrect} / ${summary.initialAttempted}問`, "これまで最初に解いた全問題の正解数です"],
     ["通算の初回正解率", rateText(summary.initialRate), summary.initialAttempted ? `${summary.initialCorrect} / ${summary.initialAttempted}問` : "最初の10問を解くと表示されます"]
   ].map(([label, value, note]) => {
     const card = document.createElement("article");
