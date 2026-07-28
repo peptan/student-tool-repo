@@ -1,11 +1,7 @@
 export const PROGRESS_KEY = "student-tool.base-converter.progress.v1";
 
 export function emptyProgress() {
-  return { version: 4, stats: {}, mistakes: [], sets: {}, history: { directions: {} }, solvedQuestionKeys: [], attemptedQuestionKeys: [], legacyNotice: false };
-}
-
-export function questionKey(question) {
-  return `${question.fromBase}-${question.toBase}-${question.width}-${question.value}`;
+  return { version: 5, directions: {}, legacyNotice: false };
 }
 
 export function conversionKey(question) {
@@ -13,38 +9,39 @@ export function conversionKey(question) {
 }
 
 function validProgress(value) {
-  return value && value.version === 4 && typeof value.stats === "object" && Array.isArray(value.mistakes) && typeof value.sets === "object" && typeof value.history === "object" && Array.isArray(value.solvedQuestionKeys) && Array.isArray(value.attemptedQuestionKeys);
+  return value && value.version === 5 && typeof value.directions === "object";
 }
 
-function migrateV1(value) {
-  return { ...emptyProgress(), mistakes: value.mistakes, legacyNotice: true };
+function cleanDirections(directions) {
+  return Object.fromEntries(Object.entries(directions ?? {}).map(([key, value]) => [key, {
+    attempted: Number.isInteger(value?.attempted) ? value.attempted : Number(value?.initialAttempted) || 0,
+    correct: Number.isInteger(value?.correct) ? value.correct : Number(value?.initialCorrect) || 0
+  }]));
 }
 
-function migrateV2(value) {
-  const next = { ...emptyProgress(), mistakes: value.mistakes, sets: value.sets, legacyNotice: value.legacyNotice };
-  for (const [key, set] of Object.entries(value.sets ?? {})) {
-    if (set.initial) next.history.directions[key] = { initialAttempted: set.initial.attempted, initialCorrect: set.initial.correct };
-    next.attemptedQuestionKeys.push(...(set.questionKeys ?? []));
-    next.solvedQuestionKeys.push(...(set.masteredKeys ?? []));
-  }
-  next.attemptedQuestionKeys = [...new Set(next.attemptedQuestionKeys)];
-  next.solvedQuestionKeys = [...new Set(next.solvedQuestionKeys)];
-  return next;
+function migrateV4(value) {
+  return { version: 5, directions: cleanDirections(value.history?.directions), legacyNotice: false };
 }
 
 function migrateV3(value) {
-  const next = { ...emptyProgress(), stats: value.stats, mistakes: value.mistakes, sets: value.sets, history: { directions: value.history?.directions ?? {} }, solvedQuestionKeys: value.solvedQuestionKeys ?? [], legacyNotice: value.legacyNotice };
-  next.attemptedQuestionKeys = [...new Set(Object.values(next.sets).flatMap((set) => set.questionKeys ?? []))];
-  return next;
+  return { version: 5, directions: cleanDirections(value.history?.directions), legacyNotice: false };
+}
+
+function migrateV2(value) {
+  const directions = {};
+  for (const [key, set] of Object.entries(value.sets ?? {})) {
+    if (set.initial) directions[key] = { attempted: set.initial.attempted, correct: set.initial.correct };
+  }
+  return { version: 5, directions: cleanDirections(directions), legacyNotice: false };
 }
 
 export function loadProgress(storage = globalThis.localStorage) {
   try {
     const value = JSON.parse(storage.getItem(PROGRESS_KEY));
     if (validProgress(value)) return value;
+    if (value?.version === 4) return migrateV4(value);
     if (value?.version === 3) return migrateV3(value);
-    if (value?.version === 2 && Array.isArray(value.mistakes)) return migrateV2(value);
-    if (value?.version === 1 && Array.isArray(value.mistakes)) return migrateV1(value);
+    if (value?.version === 2) return migrateV2(value);
     return emptyProgress();
   } catch {
     return emptyProgress();
@@ -55,94 +52,26 @@ export function saveProgress(progress, storage = globalThis.localStorage) {
   storage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 }
 
-function savedQuestion(question) {
-  const { id, ...record } = question;
-  return record;
-}
-
-function unique(values) {
-  return [...new Set(values)];
-}
-
-function directionHistory(progress, key) {
-  return progress.history.directions[key] ?? { initialAttempted: 0, initialCorrect: 0 };
-}
-
-export function beginPracticeSet(progress, questions) {
+export function recordGrades(progress, grades) {
   const next = structuredClone(progress);
-  const key = conversionKey(questions[0]);
-  next.sets[key] = { questionKeys: questions.map(questionKey), masteredKeys: [], initial: null, latestReview: null };
-  next.mistakes = next.mistakes.filter((question) => conversionKey(question) !== key);
-  next.legacyNotice = false;
-  return next;
-}
-
-export function recordGrades(progress, grades, mode = "practice") {
-  const next = structuredClone(progress);
-  const grouped = new Map();
   for (const grade of grades) {
     const key = conversionKey(grade.question);
-    const collection = grouped.get(key) ?? [];
-    collection.push(grade);
-    grouped.set(key, collection);
-    const stats = next.stats[key] ?? { attempted: 0, correct: 0 };
-    stats.attempted += 1;
-    if (grade.correct) stats.correct += 1;
-    next.stats[key] = stats;
-
-    const keyForQuestion = questionKey(grade.question);
-    if (mode === "practice") {
-      const history = directionHistory(next, key);
-      history.initialAttempted += 1;
-      if (grade.correct) history.initialCorrect += 1;
-      next.history.directions[key] = history;
-      next.attemptedQuestionKeys = unique([...next.attemptedQuestionKeys, keyForQuestion]);
-    }
-    next.mistakes = next.mistakes.filter((question) => questionKey(question) !== keyForQuestion);
-    if (!grade.correct) next.mistakes.push(savedQuestion(grade.question));
-
-    const set = next.sets[key];
-    if (set && grade.correct && set.questionKeys.includes(keyForQuestion)) set.masteredKeys = unique([...set.masteredKeys, keyForQuestion]);
-    if (grade.correct) next.solvedQuestionKeys = unique([...next.solvedQuestionKeys, keyForQuestion]);
-  }
-  for (const [key, group] of grouped) {
-    const result = { attempted: group.length, correct: group.filter((grade) => grade.correct).length };
-    const set = next.sets[key];
-    if (set) {
-      if (mode === "practice") set.initial = result;
-      if (mode === "review") set.latestReview = result;
-    }
+    const stat = next.directions[key] ?? { attempted: 0, correct: 0 };
+    stat.attempted += 1;
+    if (grade.correct) stat.correct += 1;
+    next.directions[key] = stat;
   }
   return next;
 }
 
-export function setSummary(progress, key) {
-  const set = progress.sets[key];
-  if (!set) return null;
-  const total = set.questionKeys.length;
-  const mastered = set.masteredKeys.length;
-  return { total, mastered, remaining: total - mastered, masteryRate: total ? Math.round((mastered / total) * 100) : 0, initial: set.initial, latestReview: set.latestReview };
-}
-
-export function initialSummary(progress, key) {
-  const history = directionHistory(progress, key);
-  return { ...history, rate: history.initialAttempted ? Math.round((history.initialCorrect / history.initialAttempted) * 100) : null };
+export function directionSummary(progress, key) {
+  const stat = progress.directions[key] ?? { attempted: 0, correct: 0 };
+  return { ...stat, rate: stat.attempted ? Math.round((stat.correct / stat.attempted) * 100) : null };
 }
 
 export function analyticsSummary(progress) {
-  const directions = Object.values(progress.history.directions);
-  const initialAttempted = directions.reduce((total, stat) => total + stat.initialAttempted, 0);
-  const initialCorrect = directions.reduce((total, stat) => total + stat.initialCorrect, 0);
-  return { initialAttempted, initialCorrect, initialRate: initialAttempted ? Math.round((initialCorrect / initialAttempted) * 100) : null, solved: progress.solvedQuestionKeys.length, attempted: progress.attemptedQuestionKeys.length };
-}
-
-export function overallSummary(progress) {
-  return Object.keys(progress.sets).reduce((summary, key) => {
-    const set = setSummary(progress, key);
-    return { total: summary.total + set.total, mastered: summary.mastered + set.mastered };
-  }, { total: 0, mastered: 0 });
-}
-
-export function reviewQuestions(progress, limit = 10) {
-  return progress.mistakes.slice(0, limit).map((question) => ({ ...question, id: crypto.randomUUID() }));
+  const directions = Object.values(progress.directions);
+  const attempted = directions.reduce((total, stat) => total + stat.attempted, 0);
+  const correct = directions.reduce((total, stat) => total + stat.correct, 0);
+  return { attempted, correct, rate: attempted ? Math.round((correct / attempted) * 100) : null };
 }
