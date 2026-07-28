@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test apps/base-converter/tests/*.test.js",
-    "check": "node --check apps/base-converter/base-converter.js && node --check apps/base-converter/app.js"
+    "check": "node --check apps/base-converter/base-converter.js && node --check apps/base-converter/progress-store.js && node --check apps/base-converter/menu.js && node --check apps/base-converter/quiz.js"
   }
 }

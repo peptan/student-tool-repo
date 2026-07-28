@@ -4,10 +4,11 @@
 
 ## 1個目: 進数変換 10問チャレンジ
 
-`apps/base-converter/index.html` をブラウザで開くと、2進数・10進数・16進数の**変換方向を選び、その方向だけの問題をランダムに10問**出題します。
+`apps/base-converter/index.html` を開くと、最初に変換方向を選ぶメニューが表示されます。選択後は `quiz.html` の問題画面へ遷移し、その方向だけの問題をランダムに10問出題します。
 
-- `2進数 → 10進数` など、6種類の変換方向から選択
-- 10問を一度に表示し、最後にまとめて採点
+- 変換方向を選ぶメニュー画面と、問題・採点・解説の画面を分離
+- 変換ごとの正解率と誤答問題を、この端末のブラウザ内だけに保存
+- **間違いを復習**で、未正解の問題を最大10問出題。正解すると復習リストから外れる
 - 基本情報技術者試験の過去問風に、`基本情報技術者試験　数値表現`／`問 1`／本文の順で表示
 - 各問で正答・入力値・固定形式の式を表示
 - **この変換で10問出す**で新しい問題セットを生成
@@ -46,10 +47,14 @@ open apps/base-converter/index.html
 
 ```text
 apps/base-converter/
-├── index.html       # 生徒向け画面
-├── styles.css       # 画面デザイン
-├── app.js           # DOM操作
-├── base-converter.js # 出題・採点・解説の純粋ロジック
+├── index.html          # 変換を選ぶメニュー・学習記録
+├── quiz.html           # 問題・採点・解説の画面
+├── styles.css          # 画面デザイン
+├── menu.js             # メニューと正解率表示
+├── quiz.js             # 出題・採点・復習画面
+├── progress-store.js   # ローカルストレージの学習記録
+├── base-converter.js   # 出題・採点・解説の純粋ロジック
 └── tests/
-    └── base-converter.test.js
+    ├── base-converter.test.js
+    └── progress-store.test.js
 ```

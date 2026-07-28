@@ -4,50 +4,45 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>進数変換 10問チャレンジ | student-tool</title>
-  <meta name="description" content="基本情報技術者試験の数値表現を練習する、2進数・10進数・16進数の10問問題。">
+  <meta name="description" content="基本情報技術者試験の数値表現を練習する、進数変換問題。">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="#top">student-tool</a>
+    <a class="brand" href="index.html">student-tool</a>
     <span>基本情報 技術分野の補助ツール</span>
   </header>
-  <main id="top" class="container">
+  <main class="container menu-page">
     <section class="hero" aria-labelledby="page-title">
       <p class="eyebrow">基礎理論 / 数値表現</p>
       <h1 id="page-title">進数変換<br><span>10問チャレンジ</span></h1>
-      <p>変換の方向を選び、同じ種類の問題を10問まとめて練習します。</p>
+      <p>練習したい変換を選ぶと、その変換だけの問題を10問出します。</p>
     </section>
 
-    <section class="settings" aria-labelledby="settings-title">
-      <div>
-        <p class="eyebrow">出題メニュー</p>
-        <h2 id="settings-title">変換を選ぶ</h2>
-      </div>
-      <label for="conversion-menu">10問すべてに出す変換</label>
-      <select id="conversion-menu" name="conversion-menu"></select>
-      <p>選んだ変換だけを、4・8・12ビットの範囲で10問出題します。</p>
-    </section>
-
-    <section class="quiz-section" aria-labelledby="quiz-title">
+    <section class="menu-section" aria-labelledby="menu-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">選択中の出題</p>
-          <h2 id="quiz-title">2進数 → 10進数</h2>
+          <p class="eyebrow">出題メニュー</p>
+          <h2 id="menu-title">変換を選ぶ</h2>
         </div>
-        <button id="new-quiz" class="button secondary" type="button">この変換で10問出す</button>
       </div>
-      <form id="quiz-form" novalidate>
-        <div id="questions" class="questions" aria-live="polite"></div>
-        <div class="submit-row">
-          <button id="grade-quiz" class="button primary" type="submit">10問を採点する</button>
-          <p id="form-message" class="form-message" role="alert"></p>
+      <div id="conversion-cards" class="conversion-cards" aria-live="polite"></div>
+    </section>
+
+    <section class="progress-section" aria-labelledby="progress-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">このブラウザの学習記録</p>
+          <h2 id="progress-title">弱点を確認する</h2>
         </div>
-      </form>
-      <section id="result" class="result" hidden aria-live="polite"></section>
+        <button id="review-mistakes" class="button secondary" type="button">間違いを復習</button>
+      </div>
+      <p id="progress-summary" class="progress-summary">まだ採点記録はありません。問題を解くと変換ごとの正解率を表示します。</p>
+      <div id="progress-list" class="progress-list"></div>
+      <p class="privacy-note">正答数・出題数・再復習用の誤答問題だけを、この端末のブラウザに保存します。外部へ送信しません。</p>
     </section>
   </main>
   <footer>student-tool · 回答データはブラウザ外へ送信しません</footer>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="menu.js"></script>
 </body>
 </html>
