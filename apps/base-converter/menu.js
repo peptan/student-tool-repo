@@ -1,9 +1,10 @@
 import { CONVERSION_CHOICES } from "./base-converter.js";
-import { analyticsSummary, directionSummary, loadProgress } from "./progress-store.js";
+import { analyticsSummary, clearProgress, directionSummary, loadProgress } from "./progress-store.js";
 
 const cards = document.querySelector("#conversion-cards");
 const progressList = document.querySelector("#progress-list");
 const summary = document.querySelector("#progress-summary");
+const clearButton = document.querySelector("#clear-progress");
 
 function statText(stat) {
   return stat.rate === null ? "まだ解いていません" : `${stat.correct} / ${stat.attempted}問 正解（${stat.rate}%）`;
@@ -33,5 +34,12 @@ function render() {
     return item;
   }));
 }
+
+clearButton.addEventListener("click", () => {
+  const accepted = window.confirm("このブラウザに保存されている進数変換の学習記録を消去します。元に戻せません。消去しますか？");
+  if (!accepted) return;
+  clearProgress();
+  render();
+});
 
 render();

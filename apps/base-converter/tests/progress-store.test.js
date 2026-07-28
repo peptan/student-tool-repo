@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyticsSummary, conversionKey, directionSummary, emptyProgress, loadProgress, PROGRESS_KEY, recordGrades, saveProgress } from "../progress-store.js";
+import { analyticsSummary, clearProgress, conversionKey, directionSummary, emptyProgress, loadProgress, PROGRESS_KEY, recordGrades, saveProgress } from "../progress-store.js";
 
 function question(value, fromBase = 2, toBase = 10, width = 4) {
   return { id: `test-${value}-${width}`, value, fromBase, toBase, width, prompt: "問題", answer: String(value), choices: ["0", "1", "2", "3"], explanation: "解説" };
@@ -8,7 +8,7 @@ function question(value, fromBase = 2, toBase = 10, width = 4) {
 
 function memoryStorage() {
   const values = new Map();
-  return { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+  return { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) };
 }
 
 test("採点結果を変換方向ごとの正解数・解答数へ積み上げる", () => {
@@ -45,6 +45,14 @@ test("バージョン4の初回集計を通算記録として引き継ぐ", () =
   const migrated = loadProgress(storage);
   assert.equal(migrated.version, 5);
   assert.deepEqual(analyticsSummary(migrated), { attempted: 40, correct: 7, rate: 18 });
+});
+
+test("学習記録を明示的に消去できる", () => {
+  const storage = memoryStorage();
+  saveProgress(recordGrades(emptyProgress(), [{ question: question(1), correct: true }]), storage);
+  clearProgress(storage);
+  assert.equal(storage.getItem(PROGRESS_KEY), null);
+  assert.deepEqual(loadProgress(storage), emptyProgress());
 });
 
 test("壊れた保存値は空の学習記録として扱う", () => {

@@ -52,6 +52,10 @@ export function saveProgress(progress, storage = globalThis.localStorage) {
   storage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 }
 
+export function clearProgress(storage = globalThis.localStorage) {
+  storage.removeItem(PROGRESS_KEY);
+}
+
 export function recordGrades(progress, grades) {
   const next = structuredClone(progress);
   for (const grade of grades) {
